@@ -77,6 +77,8 @@ func (lcmd *LocalCommand) Write(p []byte) (n int, err error) {
 }
 
 func (lcmd *LocalCommand) Close() error {
+	// exit before close
+	lcmd.pty.WriteString("exit\r")
 	if lcmd.cmd != nil && lcmd.cmd.Process != nil {
 		lcmd.cmd.Process.Signal(lcmd.closeSignal)
 	}
