@@ -13,13 +13,12 @@ import (
 	noesctmpl "text/template"
 	"time"
 
-	"github.com/NYTimes/gziphandler"
 	"github.com/elazarl/go-bindata-assetfs"
+	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 
 	"github.com/wrfly/container-web-tty/gotty/pkg/homedir"
-	"github.com/wrfly/container-web-tty/gotty/pkg/randomstring"
 	"github.com/wrfly/container-web-tty/gotty/webtty"
 )
 
@@ -96,9 +95,6 @@ func (server *Server) Run(ctx context.Context, options ...RunOption) error {
 	counter := newCounter(time.Duration(server.options.Timeout) * time.Second)
 
 	path := "/"
-	if server.options.EnableRandomUrl {
-		path = "/" + randomstring.Generate(server.options.RandomUrlLength) + "/"
-	}
 
 	handlers := server.setupHandlers(cctx, cancel, path, counter)
 	srv, err := server.setupHTTPServer(handlers)
@@ -106,16 +102,10 @@ func (server *Server) Run(ctx context.Context, options ...RunOption) error {
 		return errors.Wrapf(err, "failed to setup an HTTP server")
 	}
 
-	if server.options.PermitWrite {
-		log.Printf("Permitting clients to write input to the PTY.")
-	}
 	if server.options.Once {
 		log.Printf("Once option is provided, accepting only one client")
 	}
 
-	if server.options.Port == "0" {
-		log.Printf("Port number configured to `0`, choosing a random port")
-	}
 	hostPort := net.JoinHostPort(server.options.Address, server.options.Port)
 	listener, err := net.Listen("tcp", hostPort)
 	if err != nil {
@@ -180,36 +170,32 @@ func (server *Server) Run(ctx context.Context, options ...RunOption) error {
 	return err
 }
 
-func (server *Server) setupHandlers(ctx context.Context, cancel context.CancelFunc, pathPrefix string, counter *counter) http.Handler {
+func (server *Server) setupHandlers(ctx context.Context, cancel context.CancelFunc,
+	pathPrefix string, counter *counter) *mux.Router {
+
 	staticFileHandler := http.FileServer(
 		&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, Prefix: "static"},
 	)
 
-	var siteMux = http.NewServeMux()
+	var siteMux = mux.NewRouter()
 	siteMux.HandleFunc(pathPrefix, server.handleIndex)
-	siteMux.Handle(pathPrefix+"js/", http.StripPrefix(pathPrefix, staticFileHandler))
-	siteMux.Handle(pathPrefix+"favicon.png", http.StripPrefix(pathPrefix, staticFileHandler))
-	siteMux.Handle(pathPrefix+"css/", http.StripPrefix(pathPrefix, staticFileHandler))
+	siteMux.PathPrefix("/js").Handler(http.StripPrefix(pathPrefix, staticFileHandler))
+	siteMux.PathPrefix("/css").Handler(http.StripPrefix(pathPrefix, staticFileHandler))
+	siteMux.Handle("/favicon.png", http.StripPrefix(pathPrefix, staticFileHandler))
 
-	siteMux.HandleFunc(pathPrefix+"auth_token.js", server.handleAuthToken)
-	siteMux.HandleFunc(pathPrefix+"config.js", server.handleConfig)
+	siteMux.HandleFunc("/auth_token.js", server.handleAuthToken)
+	siteMux.HandleFunc("/config.js", server.handleConfig)
 
-	siteHandler := http.Handler(siteMux)
+	siteMux.HandleFunc(pathPrefix+"{id}", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, r.URL.String()+"/", 301)
+	})
+	siteMux.HandleFunc(pathPrefix+"{id}/", server.handleIndex)
+	siteMux.HandleFunc(pathPrefix+"{id}/"+"ws", server.generateHandleWS(ctx, cancel, counter))
+	siteMux.HandleFunc("/x/{id}", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(mux.Vars(r)["id"]))
+	})
 
-	if server.options.EnableBasicAuth {
-		log.Printf("Using Basic Authentication")
-		siteHandler = server.wrapBasicAuth(siteHandler, server.options.Credential)
-	}
-
-	withGz := gziphandler.GzipHandler(server.wrapHeaders(siteHandler))
-	siteHandler = server.wrapLogger(withGz)
-
-	wsMux := http.NewServeMux()
-	wsMux.Handle("/", siteHandler)
-	wsMux.HandleFunc(pathPrefix+"ws", server.generateHandleWS(ctx, cancel, counter))
-	siteHandler = http.Handler(wsMux)
-
-	return siteHandler
+	return siteMux
 }
 
 func (server *Server) setupHTTPServer(handler http.Handler) (*http.Server, error) {

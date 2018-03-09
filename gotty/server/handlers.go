@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"sync/atomic"
 
+	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 
@@ -72,7 +72,10 @@ func (server *Server) generateHandleWS(ctx context.Context, cancel context.Cance
 		}
 		defer conn.Close()
 
-		err = server.processWSConn(ctx, conn)
+		vars := mux.Vars(r)
+		args := []string{vars["id"], "sh"}
+
+		err = server.processWSConn(ctx, conn, args)
 
 		switch err {
 		case ctx.Err():
@@ -87,7 +90,7 @@ func (server *Server) generateHandleWS(ctx context.Context, cancel context.Cance
 	}
 }
 
-func (server *Server) processWSConn(ctx context.Context, conn *websocket.Conn) error {
+func (server *Server) processWSConn(ctx context.Context, conn *websocket.Conn, args []string) error {
 	typ, initLine, err := conn.ReadMessage()
 	if err != nil {
 		return errors.Wrapf(err, "failed to authenticate websocket connection")
@@ -105,18 +108,8 @@ func (server *Server) processWSConn(ctx context.Context, conn *websocket.Conn) e
 		return errors.New("failed to authenticate websocket connection")
 	}
 
-	queryPath := "?"
-	if server.options.PermitArguments && init.Arguments != "" {
-		queryPath = init.Arguments
-	}
-
-	query, err := url.Parse(queryPath)
-	if err != nil {
-		return errors.Wrapf(err, "failed to parse arguments")
-	}
-	params := query.Query()
 	var slave Slave
-	slave, err = server.factory.New(params)
+	slave, err = server.factory.New(args)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create backend")
 	}
@@ -170,11 +163,15 @@ func (server *Server) processWSConn(ctx context.Context, conn *websocket.Conn) e
 
 func (server *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	titleVars := server.titleVariables(
-		[]string{"server", "master"},
+		[]string{"server", "master", "container"},
 		map[string]map[string]interface{}{
 			"server": server.options.TitleVariables,
 			"master": map[string]interface{}{
 				"remote_addr": r.RemoteAddr,
+			},
+			"container": map[string]interface{}{
+				"name": r.URL.Path,
+				"id":   r.URL.Path,
 			},
 		},
 	)
