@@ -94,7 +94,7 @@ func (server *Server) Run(ctx context.Context, options ...RunOption) error {
 
 	counter := newCounter(time.Duration(server.options.Timeout) * time.Second)
 
-	path := "/"
+	path := "/exec/"
 
 	handlers := server.setupHandlers(cctx, cancel, path, counter)
 	srv, err := server.setupHTTPServer(handlers)
@@ -179,8 +179,8 @@ func (server *Server) setupHandlers(ctx context.Context, cancel context.CancelFu
 
 	var siteMux = mux.NewRouter()
 	siteMux.HandleFunc(pathPrefix, server.handleIndex)
-	siteMux.PathPrefix("/js").Handler(http.StripPrefix(pathPrefix, staticFileHandler))
-	siteMux.PathPrefix("/css").Handler(http.StripPrefix(pathPrefix, staticFileHandler))
+	siteMux.PathPrefix("/js").Handler(http.StripPrefix("/", staticFileHandler))
+	siteMux.PathPrefix("/css").Handler(http.StripPrefix("/", staticFileHandler))
 	siteMux.Handle("/favicon.png", http.StripPrefix(pathPrefix, staticFileHandler))
 
 	siteMux.HandleFunc("/auth_token.js", server.handleAuthToken)

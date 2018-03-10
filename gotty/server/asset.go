@@ -88,7 +88,7 @@ func staticCssIndexCss() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "static/css/index.css", size: 116, mode: os.FileMode(420), modTime: time.Unix(1520612321, 0)}
+	info := bindataFileInfo{name: "static/css/index.css", size: 116, mode: os.FileMode(420), modTime: time.Unix(1520697556, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -108,7 +108,7 @@ func staticCssXtermCss() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "static/css/xterm.css", size: 35217, mode: os.FileMode(420), modTime: time.Unix(1520612321, 0)}
+	info := bindataFileInfo{name: "static/css/xterm.css", size: 35217, mode: os.FileMode(420), modTime: time.Unix(1520697556, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -168,7 +168,7 @@ func staticIndexHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "static/index.html", size: 486, mode: os.FileMode(420), modTime: time.Unix(1520612321, 0)}
+	info := bindataFileInfo{name: "static/index.html", size: 486, mode: os.FileMode(420), modTime: time.Unix(1520697612, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
