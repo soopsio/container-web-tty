@@ -73,9 +73,14 @@ func (server *Server) generateHandleWS(ctx context.Context, cancel context.Cance
 		defer conn.Close()
 
 		vars := mux.Vars(r)
-		args := []string{vars["id"], "sh"}
+		containerID := vars["id"]
+		sh, got := vars["sh"]
+		if !got {
+			sh = "sh"
+		}
+		cmdAndArgs := []string{containerID, sh}
 
-		err = server.processWSConn(ctx, conn, args)
+		err = server.processWSConn(ctx, conn, cmdAndArgs)
 
 		switch err {
 		case ctx.Err():
@@ -118,7 +123,11 @@ func (server *Server) processWSConn(ctx context.Context, conn *websocket.Conn, a
 	titleVars := server.titleVariables(
 		[]string{"server", "master", "slave"},
 		map[string]map[string]interface{}{
-			"server": server.options.TitleVariables,
+			"server": map[string]interface{}{
+				"hostname":      server.options.TitleVariables["hostname"].(string),
+				"containerName": args[0],
+				"containerID":   args[0],
+			},
 			"master": map[string]interface{}{
 				"remote_addr": conn.RemoteAddr(),
 			},
@@ -163,15 +172,15 @@ func (server *Server) processWSConn(ctx context.Context, conn *websocket.Conn, a
 
 func (server *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	titleVars := server.titleVariables(
-		[]string{"server", "master", "container"},
+		[]string{"server", "master"},
 		map[string]map[string]interface{}{
-			"server": server.options.TitleVariables,
 			"master": map[string]interface{}{
 				"remote_addr": r.RemoteAddr,
 			},
-			"container": map[string]interface{}{
-				"name": r.URL.Path,
-				"id":   r.URL.Path,
+			"server": map[string]interface{}{
+				"hostname":      server.options.TitleVariables["hostname"].(string),
+				"containerName": "name",
+				"containerID":   "ID",
 			},
 		},
 	)

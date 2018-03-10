@@ -189,11 +189,13 @@ func (server *Server) setupHandlers(ctx context.Context, cancel context.CancelFu
 	siteMux.HandleFunc(pathPrefix+"{id}", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, r.URL.String()+"/", 301)
 	})
-	siteMux.HandleFunc(pathPrefix+"{id}/", server.handleIndex)
-	siteMux.HandleFunc(pathPrefix+"{id}/"+"ws", server.generateHandleWS(ctx, cancel, counter))
-	siteMux.HandleFunc("/x/{id}", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(mux.Vars(r)["id"]))
+	siteMux.HandleFunc(pathPrefix+"{id}/{sh}", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, r.URL.String()+"/", 301)
 	})
+	siteMux.HandleFunc(pathPrefix+"{id}/", server.handleIndex)
+	siteMux.HandleFunc(pathPrefix+"{id}/{sh}/", server.handleIndex)
+	siteMux.HandleFunc(pathPrefix+"{id}/"+"ws", server.generateHandleWS(ctx, cancel, counter))
+	siteMux.HandleFunc(pathPrefix+"{id}/{sh}/"+"ws", server.generateHandleWS(ctx, cancel, counter))
 
 	return siteMux
 }
