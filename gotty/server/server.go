@@ -113,32 +113,11 @@ func (server *Server) Run(ctx context.Context, options ...RunOption) error {
 	}
 
 	scheme := "http"
-	if server.options.EnableTLS {
-		scheme = "https"
-	}
-	host, port, _ := net.SplitHostPort(listener.Addr().String())
-	log.Printf("HTTP server is listening at: %s", scheme+"://"+host+":"+port+path)
-	if server.options.Address == "0.0.0.0" {
-		for _, address := range listAddresses() {
-			log.Printf("Alternative URL: %s", scheme+"://"+address+":"+port+path)
-		}
-	}
+	log.Printf("HTTP server is listening at: %s", scheme+"://"+hostPort+path)
 
 	srvErr := make(chan error, 1)
 	go func() {
-		if server.options.EnableTLS {
-			crtFile := homedir.Expand(server.options.TLSCrtFile)
-			keyFile := homedir.Expand(server.options.TLSKeyFile)
-			log.Printf("TLS crt file: " + crtFile)
-			log.Printf("TLS key file: " + keyFile)
-
-			err = srv.ServeTLS(listener, crtFile, keyFile)
-		} else {
-			err = srv.Serve(listener)
-		}
-		if err != nil {
-			srvErr <- err
-		}
+		srvErr <- srv.Serve(listener)
 	}()
 
 	go func() {
@@ -181,7 +160,7 @@ func (server *Server) setupHandlers(ctx context.Context, cancel context.CancelFu
 	siteMux.HandleFunc(pathPrefix, server.handleIndex)
 	siteMux.PathPrefix("/js").Handler(http.StripPrefix("/", staticFileHandler))
 	siteMux.PathPrefix("/css").Handler(http.StripPrefix("/", staticFileHandler))
-	siteMux.Handle("/favicon.png", http.StripPrefix(pathPrefix, staticFileHandler))
+	siteMux.Handle("/favicon.png", http.StripPrefix("/", staticFileHandler))
 
 	siteMux.HandleFunc("/auth_token.js", server.handleAuthToken)
 	siteMux.HandleFunc("/config.js", server.handleConfig)
@@ -189,12 +168,12 @@ func (server *Server) setupHandlers(ctx context.Context, cancel context.CancelFu
 	siteMux.HandleFunc(pathPrefix+"{id}", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, r.URL.String()+"/", 301)
 	})
+	siteMux.HandleFunc(pathPrefix+"{id}/"+"ws", server.generateHandleWS(ctx, cancel, counter))
 	siteMux.HandleFunc(pathPrefix+"{id}/{sh}", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, r.URL.String()+"/", 301)
 	})
 	siteMux.HandleFunc(pathPrefix+"{id}/", server.handleIndex)
 	siteMux.HandleFunc(pathPrefix+"{id}/{sh}/", server.handleIndex)
-	siteMux.HandleFunc(pathPrefix+"{id}/"+"ws", server.generateHandleWS(ctx, cancel, counter))
 	siteMux.HandleFunc(pathPrefix+"{id}/{sh}/"+"ws", server.generateHandleWS(ctx, cancel, counter))
 
 	return siteMux
