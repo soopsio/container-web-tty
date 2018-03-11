@@ -239,3 +239,40 @@ func (server *Server) titleVariables(order []string, varUnits map[string]map[str
 
 	return titleVars
 }
+
+func (server *Server) handleListContainers(w http.ResponseWriter, r *http.Request) {
+	titleVars := server.titleVariables(
+		[]string{"server", "master"},
+		map[string]map[string]interface{}{
+			"master": map[string]interface{}{
+				"remote_addr": r.RemoteAddr,
+			},
+			"server": map[string]interface{}{
+				"containerName": "List",
+				"containerID":   "Containers",
+				"hostname":      server.options.TitleVariables["hostname"].(string),
+			},
+		},
+	)
+
+	titleBuf := new(bytes.Buffer)
+	err := server.titleTemplate.Execute(titleBuf, titleVars)
+	if err != nil {
+		http.Error(w, "Internal Server Error", 500)
+		return
+	}
+
+	listVars := map[string]interface{}{
+		"title":      titleBuf.String(),
+		"containers": server.containerCli.List(r.Context()),
+	}
+
+	listBuf := new(bytes.Buffer)
+	err = server.listTemplate.Execute(listBuf, listVars)
+	if err != nil {
+		http.Error(w, "Internal Server Error", 500)
+		return
+	}
+
+	w.Write(listBuf.Bytes())
+}

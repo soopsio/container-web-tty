@@ -20,8 +20,9 @@ bindata:
 bindata/static: bindata
 	mkdir bindata/static
 
-bindata/static/index.html: bindata/static resources/index.html
+bindata/static/index.html: bindata/static resources/index.html resources/list.html
 	cp resources/index.html bindata/static/index.html
+	cp resources/list.html bindata/static/list.html
 
 bindata/static/favicon.png: bindata/static resources/favicon.png
 	cp resources/favicon.png bindata/static/favicon.png
@@ -36,8 +37,9 @@ bindata/static/js/gotty-bundle.js: bindata/static/js js/dist/gotty-bundle.js
 bindata/static/css: bindata/static
 	mkdir -p bindata/static/css
 
-bindata/static/css/index.css: bindata/static/css resources/index.css
+bindata/static/css/index.css: bindata/static/css resources/index.css resources/list.css
 	cp resources/index.css bindata/static/css/index.css
+	cp resources/list.css bindata/static/css/list.css
 
 bindata/static/css/xterm_customize.css: bindata/static/css resources/xterm_customize.css
 	cp resources/xterm_customize.css bindata/static/css/xterm_customize.css

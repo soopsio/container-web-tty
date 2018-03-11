@@ -18,37 +18,42 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 
+	"github.com/wrfly/container-web-tty/container"
 	"github.com/wrfly/container-web-tty/gotty/pkg/homedir"
 	"github.com/wrfly/container-web-tty/gotty/webtty"
 )
 
 // Server provides a webtty HTTP endpoint.
 type Server struct {
-	factory Factory
-	options *Options
+	factory      Factory
+	options      *Options
+	containerCli container.Cli
 
 	upgrader      *websocket.Upgrader
 	indexTemplate *template.Template
+	listTemplate  *template.Template
 	titleTemplate *noesctmpl.Template
 }
 
 // New creates a new instance of Server.
 // Server will use the New() of the factory provided to handle each request.
-func New(factory Factory, options *Options) (*Server, error) {
+func New(factory Factory, options *Options, containerCli container.Cli) (*Server, error) {
 	indexData, err := Asset("static/index.html")
 	if err != nil {
 		panic("index not found") // must be in bindata
 	}
-	if options.IndexFile != "" {
-		path := homedir.Expand(options.IndexFile)
-		indexData, err = ioutil.ReadFile(path)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to read custom index file at `%s`", path)
-		}
-	}
 	indexTemplate, err := template.New("index").Parse(string(indexData))
 	if err != nil {
 		panic("index template parse failed") // must be valid
+	}
+
+	listIndexData, err := Asset("static/list.html")
+	if err != nil {
+		panic("list index not found") // must be in bindata
+	}
+	listTemplate, err := template.New("list").Parse(string(listIndexData))
+	if err != nil {
+		panic("list template parse failed") // must be valid
 	}
 
 	titleTemplate, err := noesctmpl.New("title").Parse(options.TitleFormat)
@@ -68,8 +73,9 @@ func New(factory Factory, options *Options) (*Server, error) {
 	}
 
 	return &Server{
-		factory: factory,
-		options: options,
+		factory:      factory,
+		options:      options,
+		containerCli: containerCli,
 
 		upgrader: &websocket.Upgrader{
 			ReadBufferSize:  1024,
@@ -79,6 +85,7 @@ func New(factory Factory, options *Options) (*Server, error) {
 		},
 		indexTemplate: indexTemplate,
 		titleTemplate: titleTemplate,
+		listTemplate:  listTemplate,
 	}, nil
 }
 
@@ -157,7 +164,7 @@ func (server *Server) setupHandlers(ctx context.Context, cancel context.CancelFu
 	)
 
 	var siteMux = mux.NewRouter()
-	siteMux.HandleFunc(pathPrefix, server.handleIndex)
+	siteMux.HandleFunc(pathPrefix, server.handleListContainers)
 	siteMux.PathPrefix("/js").Handler(http.StripPrefix("/", staticFileHandler))
 	siteMux.PathPrefix("/css").Handler(http.StripPrefix("/", staticFileHandler))
 	siteMux.Handle("/favicon.png", http.StripPrefix("/", staticFileHandler))

@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+  <head>
+    <title>{{ .title }}</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="stylesheet" href="/css/list.css" />
+  </head>
+  <body>
+	<div class="table ver3 m-b-110">
+		<div class="table-head">
+			<table>
+				<thead>
+					<tr class="row100 head">
+						<th class="cell100 column1">Container ID</th>
+						<th class="cell100 column2">Image</th>
+						<th class="cell100 column3">Name</th>
+						<th class="cell100 column4">emmm</th>
+					</tr>
+				</thead>
+			</table>
+		</div>
+
+		<div class="table-body">
+			<table>
+                <tbody>
+                    {{ range .containers }}
+                    <tr class="row100 body">
+                        <td class="cell100 column1">
+                            <a href="{{ printf "%.7s" .ID }}" target="_blank">
+                                {{ printf "%.7s" .ID }}
+                            </a>
+                        </td>
+                        <td class="cell100 column2">{{ .Image }}</td>
+                        <td class="cell100 column3">{{ .Name }}</td>
+                        <td class="cell100 column4">Aaron Chapman</td>
+                    </tr>
+                    {{ end }}
+                </tbody>
+			</table>
+		</div>
+	</div>
+  </body>
+</html>
