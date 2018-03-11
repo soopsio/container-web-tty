@@ -20,10 +20,12 @@ a {
     -o-transition: all 0.4s;
     text-decoration: none;
     -moz-transition: all 0.4s;
+    color: burlywood;
 }
 
-a:focus {
+a:hover {
     outline: none !important;
+    color: chocolate;
 }
 
 
@@ -103,24 +105,20 @@ text-align:left;
 }
 
 .column1 {
-width: 33%;
-padding-left: 40px;
+    width: 23%;
+    padding-left: 40px;
 }
 
 .column2 {
-width: 13%;
+    width: 18%;
 }
 
 .column3 {
-width: 22%;
+    width: 22%;
 }
 
 .column4 {
-width: 19%;
-}
-
-.column5 {
-    width: 13%;
+    width: 19%;
 }
 
 .table-head th {

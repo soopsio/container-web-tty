@@ -101,7 +101,7 @@ func (server *Server) Run(ctx context.Context, options ...RunOption) error {
 
 	counter := newCounter(time.Duration(server.options.Timeout) * time.Second)
 
-	path := "/exec/"
+	path := "/"
 
 	handlers := server.setupHandlers(cctx, cancel, path, counter)
 	srv, err := server.setupHTTPServer(handlers)
@@ -175,13 +175,8 @@ func (server *Server) setupHandlers(ctx context.Context, cancel context.CancelFu
 	siteMux.HandleFunc(pathPrefix+"{id}", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, r.URL.String()+"/", 301)
 	})
-	siteMux.HandleFunc(pathPrefix+"{id}/"+"ws", server.generateHandleWS(ctx, cancel, counter))
-	siteMux.HandleFunc(pathPrefix+"{id}/{sh}", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, r.URL.String()+"/", 301)
-	})
 	siteMux.HandleFunc(pathPrefix+"{id}/", server.handleIndex)
-	siteMux.HandleFunc(pathPrefix+"{id}/{sh}/", server.handleIndex)
-	siteMux.HandleFunc(pathPrefix+"{id}/{sh}/"+"ws", server.generateHandleWS(ctx, cancel, counter))
+	siteMux.HandleFunc(pathPrefix+"{id}/"+"ws", server.generateHandleWS(ctx, cancel, counter))
 
 	return siteMux
 }

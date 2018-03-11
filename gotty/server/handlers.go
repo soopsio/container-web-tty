@@ -74,13 +74,13 @@ func (server *Server) generateHandleWS(ctx context.Context, cancel context.Cance
 
 		vars := mux.Vars(r)
 		containerID := vars["id"]
-		sh, got := vars["sh"]
-		if !got {
-			sh = "sh"
+		sh := "sh"
+		if server.containerCli.BashExist(r.Context(), containerID) {
+			sh = "bash"
 		}
-		cmdAndArgs := []string{containerID, sh}
+		args := []string{containerID, sh}
 
-		err = server.processWSConn(ctx, conn, cmdAndArgs)
+		err = server.processWSConn(ctx, conn, args)
 
 		switch err {
 		case ctx.Err():
