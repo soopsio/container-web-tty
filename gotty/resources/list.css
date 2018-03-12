@@ -105,20 +105,33 @@ text-align:left;
 }
 
 .column1 {
-    width: 23%;
+    width: 20%;
     padding-left: 40px;
 }
 
 .column2 {
-    width: 18%;
+    width: 20%;
+    overflow: hidden;
 }
 
 .column3 {
-    width: 22%;
+    width: 20%;
+    overflow: hidden;
 }
 
 .column4 {
-    width: 19%;
+    width: 20%;
+    overflow: hidden;
+}
+
+.column5 {
+    width: 10%;
+    overflow: hidden;
+}
+
+.column6 {
+    width: 10%;
+    overflow: hidden;
 }
 
 .table-head th {
@@ -144,11 +157,6 @@ text-align:left;
     width: 100%;
     top: 0;
     left: 0;
-}
-
-.table-body {
-    overflow: auto;
-    max-height: 585px;
 }
 
 .table.ver3 th {
