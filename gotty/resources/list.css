@@ -107,11 +107,13 @@ text-align:left;
 .column1 {
     width: 20%;
     padding-left: 40px;
+    min-width: 120px;
 }
 
 .column2 {
     width: 20%;
     overflow: hidden;
+    padding-left: 40px;
 }
 
 .column3 {
